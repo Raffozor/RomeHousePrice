@@ -1,0 +1,7 @@
+# Add project dependencies here
+
+pandas~=1.4.4
+sqlalchemy~=1.4.39
+mysql-connector-python~=8.0.31
+numpy~=1.24.2
+matplotlib~=3.7.1
