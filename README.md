@@ -1,6 +1,5 @@
 # Rome House Price Prediction
 
-Questo progetto ha l'obiettivo di creare un modello di deep-learning che sia in grado di dare una stima verosimile del prezzo delle case di Roma all'interno del GRA.
-Le variabili utilizzate includono la posizione geografica, numero di stanze, bagni, metri quadri etc.
+This project aims to create a deep-learning model that is able to give a plausible estimate of the price of houses in Rome within the GRA. Variables used include geographic location, number of rooms, bathrooms, square meters etc.
 
-Questo progetto è un semplice esercizio e non può essere considerato attendibile
+Data Source: Web-Scraping from an Italian Real Estate website
