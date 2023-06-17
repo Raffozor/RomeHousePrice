@@ -229,22 +229,8 @@ class DataPreprocessor:
 
         plt.show()
 
-    def replace_missing(self):
-
-        for col in self.train_nomiss.columns:
-            if self.train_nomiss[col].isna().sum() > 0:
-
-                if self.train[col].dtypes == 'object':
-                    self.train_nomiss[col] = self.train_nomiss[col].replace(np.nan, self.train[col].mode()[0])
-                    self.test_nomiss[col] = self.test_nomiss[col].replace(np.nan, self.train[col].mode()[0])
-
-                if is_numeric_dtype(self.train[col]):
-                    self.train_nomiss[col] = self.train_nomiss[col].replace(np.nan, round(self.train[col].mean(), 2))
-                    self.test_nomiss[col] = self.test_nomiss[col].replace(np.nan, round(self.train[col].mean(), 2))
-
     def run_preprocessor(self, missing_values, train_size=0.8, seed=42):
 
         self.replace_with_nan(missing_values)
-        self.split_train_test(train_size, seed)
+        self.train_test(train_size, seed)
         self.plot_missing()
-        self.replace_missing()
