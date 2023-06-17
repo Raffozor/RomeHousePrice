@@ -104,10 +104,10 @@ def plot_nan_percentages(df):
     nan_percentages = df.isna().mean()
 
     # Create a new figure with size (10,6)
-    plt.figure(figsize=(10, 6))
+    #plt.figure(figsize=(10, 6))
 
     # Create a horizontal bar chart of the NaN percentages
-    nan_percentages.plot(kind='barh')
+    nan_percentages.sort_values(ascending=False).plot(kind='bar')
 
     # Customize the chart
     plt.title('Percentage of NaN values per column')
@@ -149,3 +149,102 @@ def plot_bar(df,missing_value):
     ax.set_xticks(x + width, columns, rotation=-60)
 
     plt.show()
+
+def replace_missing_values(df,missing_value):
+
+    for col in df.columns:
+        df[col] = df[col].apply(lambda x: np.nan if x == missing_value else x)
+    return df
+
+def value_encoding(value,diz,train,sigma_proportion):
+    if value not in diz.keys():
+        mu = diz['missing_values'][0]
+        sigma = diz['missing_values'][1]
+        value_encoded = np.random.normal(mu, sigma*sigma_proportion, 1)[0]
+    else:
+        mu = diz[value][0]
+        sigma = diz[value][1]
+        value_encoded = np.random.normal(mu, sigma*sigma_proportion, 1)[0]
+    return value_encoded
+
+def mean_std_encoding(train, test, cols_to_encode, target, sigma_proportion, min_cat_n):
+
+    encoding_diz = {}
+    for col in cols_to_encode:
+        train.loc[train.groupby(col)[col].transform('count').lt(min_cat_n), col] = np.nan
+        diz = train.groupby(col).apply(lambda row: [row[target].mean(),row[target].std()]).to_dict()
+        diz['missing_values'] = [train[target].mean(), train[target].std()]
+        encoding_diz[col] = diz
+        train[col] = train[col].apply(lambda row: value_encoding(row, diz, train, sigma_proportion))
+        test[col] = test[col].apply(lambda row: value_encoding(row, diz, train, sigma_proportion))
+    return  train, test, encoding_diz
+
+
+class DataPreprocessor:
+
+    def __init__(self, df):
+        self.df = df
+
+    def replace_with_nan(self, missing_values):
+        self.df = self.df.replace(missing_values, np.nan)
+
+    def train_test(self, train_size=0.8, seed=42):
+        self.train = self.df.sample(frac=train_size, random_state=seed)
+        self.test = self.df.drop(index=self.train.index)
+
+    def plot_missing(self):
+
+        cols_with_missing_train = pd.DataFrame()
+        cols_with_missing_test = pd.DataFrame()
+
+        for col in self.train.columns:
+            if self.train[col].isna().sum() > 0:
+                cols_with_missing_train[col] = self.train[col]
+
+        for col in self.test.columns:
+            if self.test[col].isna().sum() > 0:
+                cols_with_missing_test[col] = self.test[col]
+        if len(cols_with_missing_train) == 0 and len(cols_with_missing_test) == 0:
+            print('No missing values')
+
+        else:
+            percentage_train = cols_with_missing_train.isna().sum() / len(cols_with_missing_train)
+            percentage_train = percentage_train.sort_values(ascending=False)
+
+            percentage_test = cols_with_missing_test.isna().sum() / len(cols_with_missing_test)
+            percentage_test = percentage_test.sort_values(ascending=False)
+            X = cols_with_missing_test.columns
+            X_axis = np.arange(len(X))
+            fig, ax = plt.subplots()
+            plt.bar(X_axis - 0.2, percentage_train, 0.4, label='Train')
+            plt.bar(X_axis + 0.2, percentage_test, 0.4, label='Test')
+
+            ax.set_xticks(X_axis, X, rotation=-45)
+            ax.set_xlabel("Variables")
+            ax.set_ylim([0, 1])
+            ax.set_ylabel('% of Missing Values')
+            ax.set_title('Missing Values')
+            ax.legend()
+            plt.show()
+
+        plt.show()
+
+    def replace_missing(self):
+
+        for col in self.train_nomiss.columns:
+            if self.train_nomiss[col].isna().sum() > 0:
+
+                if self.train[col].dtypes == 'object':
+                    self.train_nomiss[col] = self.train_nomiss[col].replace(np.nan, self.train[col].mode()[0])
+                    self.test_nomiss[col] = self.test_nomiss[col].replace(np.nan, self.train[col].mode()[0])
+
+                if is_numeric_dtype(self.train[col]):
+                    self.train_nomiss[col] = self.train_nomiss[col].replace(np.nan, round(self.train[col].mean(), 2))
+                    self.test_nomiss[col] = self.test_nomiss[col].replace(np.nan, round(self.train[col].mean(), 2))
+
+    def run_preprocessor(self, missing_values, train_size=0.8, seed=42):
+
+        self.replace_with_nan(missing_values)
+        self.split_train_test(train_size, seed)
+        self.plot_missing()
+        self.replace_missing()
