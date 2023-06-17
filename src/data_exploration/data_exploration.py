@@ -127,3 +127,25 @@ def save_to_sql(path, df, table_name):
     # Chiudere la connessione al database
     conn.close()
     return None
+
+def plot_bar(df,missing_value):
+    nones = []
+    for col in df.columns:
+        nones.append((df[col]==missing_value).sum())
+    nones = pd.DataFrame(nones,df.columns)
+    nones = nones.sort_values(0, ascending=False)
+
+    fig, ax = plt.subplots()
+
+    columns = list(nones.index)
+    counts = nones[0]
+
+    ax.bar(columns, counts, label=columns)
+
+    ax.set_ylabel(f'Number of {missing_value}')
+    ax.set_title('Columns')
+    x = np.arange(len(columns))
+    width = 0.25
+    ax.set_xticks(x + width, columns, rotation=-60)
+
+    plt.show()
